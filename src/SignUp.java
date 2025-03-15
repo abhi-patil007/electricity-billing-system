@@ -42,7 +42,7 @@ int digit;
 //GLOBAL VARIABLES AND GETTER , SETTER METHOD TO STORE USER NAME AND CONTACT NO FOR FURTHER OPERATIONS IF REQUIRED
 private static String user_name;
 private static int user_contact;
-
+private static int meterno;
 public static void setUser_Name(String name) {
     user_name = name;
 }
@@ -50,7 +50,9 @@ public static void setUser_Name(String name) {
 public static void setUser_Contact(int phone_no) {
     user_contact = phone_no;
 }
-
+public static void setMeter_No(int meter_no){
+    meterno=meter_no;
+}
 public static String getUser_Name() {
     return user_name;
 }
@@ -58,7 +60,9 @@ public static String getUser_Name() {
 public static int getUser_Contact() {
     return user_contact;
 }
-
+public static int getMeter_No(){
+    return  meterno;
+}
 //TO GET USER DATA FOR SIGNUP
 public void SignUp(String username, String pwd) {
     Random rand = new Random();

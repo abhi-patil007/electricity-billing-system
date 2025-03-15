@@ -37,6 +37,7 @@ public Login() {
 private static String user_name;
 private static int user_contact;
 private static int user_id;
+private static int meterno;
 
 public static void setUser_Name(String name) {
     user_name = name;
@@ -50,6 +51,10 @@ public static void setUser_Contact(int phone_no) {
     user_contact = phone_no;
 }
 
+public static void setMeter_No(int meter_no){
+    meterno=meter_no;
+}
+
 public static String getUser_Name() {
     return user_name;
 }
@@ -60,6 +65,10 @@ public static int getUser_Contact() {
 
 public static int getUser_id() {
     return user_id;
+}
+
+public static int getMeter_No(){
+    return  meterno;
 }
 
 //TO LOGIN THE USER
@@ -76,7 +85,7 @@ public void login() {
             String uname = rst.getString("name");
             int uid = rst.getInt("id");
             String pwd = rst.getString("password");
-
+             int metno=rst.getInt("meterno");
             String pass = passwordHash(txt_password.getText());
 
             if ((pwd.equals(pass))) {
@@ -85,6 +94,7 @@ public void login() {
                 Login.setUser_Name(uname);
 
                 Login.setUser_id(uid);
+                Login.setMeter_No(metno);
                 Dashboard dash = new Dashboard();
 //                dash.getDetails(uid);
                 dash.setVisible(true);
