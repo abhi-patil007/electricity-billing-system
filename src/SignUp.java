@@ -30,12 +30,11 @@ private void clearField() {
  */
 public SignUp() {
     initComponents();
-    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("icons/multi_app_icon.jpg"))); //FOR ICON 
+    setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("icons/bill.png"))); //FOR ICON 
 }
 
 //GLOBAL VARIABLE TO SET THE SUCCESSFUL TICK ICON ON JOPTIONPANE MESSAGE
-Icon icon = new javax.swing.ImageIcon(getClass().getResource("/icons/tick.png"));
-
+//Icon icon = new javax.swing.ImageIcon(getClass().getResource("/icons/tick.png"));
 //RANDOM NUMBER VARIABLES "key" AND "digit"
 private StringBuilder key = new StringBuilder();
 int digit;
@@ -61,9 +60,9 @@ public static int getUser_Contact() {
 }
 
 //TO GET USER DATA FOR SIGNUP
-public void SignUp(String username, String pwd, String logkey) {
+public void SignUp(String username, String pwd) {
     Random rand = new Random();
-    for (int i = 0; i <= 3; i++) {
+    for (int i = 0; i <= 4; i++) {
         digit = rand.nextInt(10);
         key.append(digit);
     }
@@ -71,20 +70,20 @@ public void SignUp(String username, String pwd, String logkey) {
 
     String conf_pwd = txt_conf_password.getText();
     String passwd = txt_password.getText();
-    String passkey = keyHash(key.toString());
+    String mtrno = key.toString();
 
     try {
         Connection con = DbConn.getConnection();
-        PreparedStatement pst = con.prepareStatement("insert into mpa.users(name,contact,password,loginkey) values(?,?,?,?)");
+        PreparedStatement pst = con.prepareStatement("insert into ebs.users(name,contact,password,meterno) values(?,?,?,?)");
         pst.setString(1, username);
         pst.setString(2, contact);
         pst.setString(3, pwd);
-        pst.setString(4, passkey);
+        pst.setString(4, mtrno);
 
         int rowcount = pst.executeUpdate();
         if (rowcount > 0) {
             if (conf_pwd.equals(passwd)) {
-                JOptionPane.showMessageDialog(this, "SignUp successful..." + username + "\nYour login key is:-  " + key, "SUCCESS", JOptionPane.INFORMATION_MESSAGE, icon);
+                JOptionPane.showMessageDialog(this, "SignUp Successful...\nYour Meter No is:-  " + key, "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
                 Login login = new Login();
                 login.setVisible(true);
                 this.dispose();
@@ -119,24 +118,6 @@ public static String passwordHash(String password) {
     return null;
 }
 
-//FOR HASHING LOGIN KEY
-public static String keyHash(String loginkey) {
-    try {
-        MessageDigest mds = MessageDigest.getInstance("SHA");    //HERE WE HAVE USED SHA-1 ALGORITHM WHICH CONTAINS 40 HEXADECIMAL CHARACTERS 
-        mds.update(loginkey.getBytes());
-        byte[] rbts = mds.digest();
-        StringBuilder sbc = new StringBuilder();
-
-        for (byte bc : rbts) {
-            sbc.append(String.format("%02x", bc));
-        }
-        return sbc.toString();
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-    return null;
-}
-
 //TO CHECK IF FIELDS ARE NOT EMPTY
 public boolean emptyFields() {
     String username = txt_username.getText();
@@ -146,9 +127,6 @@ public boolean emptyFields() {
 
     if (username.equals("")) {      //THIS  IF  BLOCK  IS  TO  CHECK  IF  USERNAME  FIELD  IS  EMPTY
         JOptionPane.showMessageDialog(null, "Please Enter Your Username !!", "WARNING", JOptionPane.WARNING_MESSAGE);    //THIS IS HOW WE GIVE WARNING MSG
-        return false;
-    } else if (!username.matches("^(.+)@(\\S+)$")) {       //THIS    else if   BLOCK IS TO CHECK  THAT  EMAIL IS  GIVEN  PROPERLY  IN  ITS  STD  FORMAT
-        JOptionPane.showMessageDialog(null, "Please Enter Your Username Properly!!", "WARNING", JOptionPane.WARNING_MESSAGE);
         return false;
     }
     if (contact.equals("")) {
@@ -180,34 +158,13 @@ public boolean digitCheck() {
     return isSame;
 }
 
-//TO CHECK IF THE USER ENTERS DIFFERENT USERNAME
-public boolean duplicateUsername() {
-    boolean isName = false;
-    String name = txt_username.getText();
-    try {
-        Connection con = DbConn.getConnection();
-        PreparedStatement pst = con.prepareStatement("SELECT * FROM mpa.users where name=? ");
-        pst.setString(1, name);
-        ResultSet rs = pst.executeQuery();
-        if (rs.next()) {
-            isName = true;
-        } else {
-            isName = false;
-        }
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-    return isName;
-}
-
 //TO CHECK IF THE USER ENTERS DIFFERENT CONTACT
 public boolean duplicateContact() {
     boolean isSame = false;
     String phone = txt_contact_no.getText();
     try {
         Connection con = DbConn.getConnection();
-        PreparedStatement pst = con.prepareStatement("SELECT * FROM mpa.users where contact=? ");
+        PreparedStatement pst = con.prepareStatement("SELECT * FROM ebs.users where contact=? ");
         pst.setString(1, phone);
         ResultSet rs = pst.executeQuery();
         if (rs.next()) {
@@ -265,13 +222,13 @@ public boolean duplicateContact() {
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel2.setText("Username");
+        jLabel2.setText("Name");
 
         txt_username.setBackground(new java.awt.Color(51, 51, 51));
         txt_username.setBorder(javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, new java.awt.Color(255, 255, 255)));
         txt_username.setForeground(new java.awt.Color(255, 255, 255));
         txt_username.setPhColor(new java.awt.Color(255, 255, 255));
-        txt_username.setPlaceholder("Enter a Unique Username");
+        txt_username.setPlaceholder("Enter Your Full Name");
 
         txt_contact_no.setBackground(new java.awt.Color(51, 51, 51));
         txt_contact_no.setBorder(javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, new java.awt.Color(255, 255, 255)));
@@ -460,26 +417,21 @@ public boolean duplicateContact() {
         String name = txt_username.getText();
         String password = passwordHash(txt_password.getText());
 
-        String passkey = keyHash(key.toString());
-
 // TODO add your handling code here:
         if (emptyFields() == true) {
-            if (duplicateUsername() == false) {
-                if (duplicateContact() == false) {
-                    if (digitCheck() == true) {
-                        SignUp(name, password, passkey);
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Enter 10 digit contact no!!!!", "WARNING", JOptionPane.WARNING_MESSAGE);
-                        txt_contact_no.setText(null);
-                    }
+
+            if (duplicateContact() == false) {
+                if (digitCheck() == true) {
+                    SignUp(name, password);
                 } else {
-                    JOptionPane.showMessageDialog(this, "Contact Already exists!!!!", "WARNING", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Enter 10 digit contact no!!!!", "WARNING", JOptionPane.WARNING_MESSAGE);
                     txt_contact_no.setText(null);
                 }
             } else {
-                JOptionPane.showMessageDialog(this, "Username Already exists!!!!", "WARNING", JOptionPane.WARNING_MESSAGE);
-                txt_username.setText(null);
+                JOptionPane.showMessageDialog(this, "Contact Already exists!!!!", "WARNING", JOptionPane.WARNING_MESSAGE);
+                txt_contact_no.setText(null);
             }
+
         }
 
     }//GEN-LAST:event_btn_signupActionPerformed
