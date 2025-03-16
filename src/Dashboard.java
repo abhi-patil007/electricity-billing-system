@@ -2,6 +2,8 @@
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Random;
 import javax.swing.JOptionPane;
 
@@ -14,12 +16,11 @@ public Dashboard() {
     initComponents();
     String name = Login.getUser_Name();
     lbl_name.setText(name.toUpperCase());
-    lbl_unit_consum.setText(unit);
-    System.out.println(unit);
+    int userid = Login.getUser_id();
+
+    unitsConsumed(userid, name);
 }
 private StringBuilder key = new StringBuilder();
-int digit;
-String unit;
 
 public void getUserInfo() {
     int userid = Login.getUser_id();
@@ -29,7 +30,6 @@ public void getUserInfo() {
         pst.setInt(1, userid);
         ResultSet rs = pst.executeQuery();
         if (rs.next()) {
-            lbl_name.setText(rs.getString("name").toUpperCase());
             String name = rs.getString("name");
             String Meter = rs.getString("meterno");
             String Contact = rs.getString("Contact");
@@ -40,15 +40,75 @@ public void getUserInfo() {
     }
 }
 
-//method to set unit consumption label
-public void unitsConsumed() {
-    Random rand = new Random();
-    for (int i = 0; i <= 2; i++) {
-        digit = rand.nextInt(10);
-        key.append(digit);
+/**
+ * ***********OriGinal CoDe*************************
+ */
+//public void unitsConsumed(int userId) {
+//    int units;
+//    LocalDate currentDate = LocalDate.now(); //get current date Format: YYYY-MM-DD
+//    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+//    try {
+//        Connection conn = DbConn.getConnection();
+//        PreparedStatement pst = conn.prepareStatement("select unit_consume from ebs.users where id=? and month_year=?");
+//        pst.setInt(1, userId);
+//        pst.setString(2, currentDate.toString());
+//        ResultSet rs = pst.executeQuery();
+//        if (rs.next()) { //this if checks if there is the logged in user have the data of unit consumed or not. if yes then it fetches the data and if not then it generates the units consumed
+//            units = rs.getInt("unit_consume");
+//        } else {
+//            Random rand = new Random();//to set a random number on unit consumption label
+//            units = rand.nextInt(201) + 100;
+//            PreparedStatement ps = conn.prepareStatement("update  ebs.users set unit_consume=?,month_year=? where id=?");
+//            ps.setInt(1, units);
+//            ps.setString(2, currentDate.toString());
+//            ps.setInt(3, userId);
+//            ps.executeUpdate();
+//        }
+//        //to check if unit consume label is labelled or not if its not labelled then set the random generated value
+//        if (lbl_unit_consum != null) {
+//            lbl_unit_consum.setText(String.valueOf(units));
+//        }
+//        lbl_duedate.setText(currentDate.plusDays(3).format(formatter).toString());
+//    } catch (Exception e) {
+//        e.printStackTrace();
+//    }
+//
+//}
+public void unitsConsumed(int userId, String name) {
+    int units;
+    LocalDate currentDate = LocalDate.now(); //get current date Format: YYYY-MM-DD
+    DateTimeFormatter monthYearFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
+    DateTimeFormatter dueDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    String currentMonthYear = currentDate.format(monthYearFormatter); // Format: YYYY-MM
+    try {
+        Connection conn = DbConn.getConnection();
+        PreparedStatement pst = conn.prepareStatement("SELECT unit_consume FROM ebs.consumption WHERE user_id = ? AND month_year = ? ");
+        pst.setInt(1, userId);
+        pst.setString(2, currentMonthYear);
+        ResultSet rs = pst.executeQuery();
+        if (rs.next()) { //this if checks if there is the logged in user have the data of unit consumed or not. if yes then it fetches the data and if not then it generates the units consumed
+            units = rs.getInt("unit_consume");
+        } else {
+            Random rand = new Random();//to set a random number on unit consumption label
+            units = rand.nextInt(201) + 100;
+            PreparedStatement ps = conn.prepareStatement("INSERT INTO ebs.consumption (user_id, month_year, unit_consume,name) VALUES (?, ?, ?,?)");
+            ps.setInt(1, userId);
+            ps.setString(2, currentMonthYear);
+            ps.setInt(3, units);
+            ps.setString(4, name);
+            ps.executeUpdate();
+        }
+        //to check if unit consume label is labelled or not if its not labelled then set the random generated value
+        if (lbl_unit_consum != null) {
+            lbl_unit_consum.setText(String.valueOf(units));
+        }
+        // Set due date to the 16th of the current month
+        LocalDate dueDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 19);
+        lbl_duedate.setText(dueDate.format(dueDateFormatter));
+    } catch (Exception e) {
+        e.printStackTrace();
     }
-     unit = key.toString();
-    System.out.println(unit);
+
 }
 
 /**
@@ -67,10 +127,10 @@ public void unitsConsumed() {
         jPanel3 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         lbl_name = new javax.swing.JLabel();
-        rSMaterialButtonCircle1 = new rojerusan.RSMaterialButtonCircle();
-        rSMaterialButtonCircle2 = new rojerusan.RSMaterialButtonCircle();
-        rSMaterialButtonCircle3 = new rojerusan.RSMaterialButtonCircle();
-        rSMaterialButtonCircle4 = new rojerusan.RSMaterialButtonCircle();
+        btn_info = new rojerusan.RSMaterialButtonCircle();
+        btn_paybills = new rojerusan.RSMaterialButtonCircle();
+        btn_viewbills = new rojerusan.RSMaterialButtonCircle();
+        btn_logout = new rojerusan.RSMaterialButtonCircle();
         jPanel4 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
@@ -92,8 +152,8 @@ public void unitsConsumed() {
         jLabel15 = new javax.swing.JLabel();
         jLabel16 = new javax.swing.JLabel();
         jLabel17 = new javax.swing.JLabel();
-        jLabel18 = new javax.swing.JLabel();
-        jLabel19 = new javax.swing.JLabel();
+        lbl_currentbill = new javax.swing.JLabel();
+        lbl_duedate = new javax.swing.JLabel();
         jLabel20 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -126,35 +186,35 @@ public void unitsConsumed() {
         lbl_name.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         lbl_name.setForeground(new java.awt.Color(255, 255, 255));
 
-        rSMaterialButtonCircle1.setBackground(new java.awt.Color(51, 0, 204));
-        rSMaterialButtonCircle1.setText("VIEW INFO");
-        rSMaterialButtonCircle1.addActionListener(new java.awt.event.ActionListener() {
+        btn_info.setBackground(new java.awt.Color(51, 0, 204));
+        btn_info.setText("VIEW INFO");
+        btn_info.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                rSMaterialButtonCircle1ActionPerformed(evt);
+                btn_infoActionPerformed(evt);
             }
         });
 
-        rSMaterialButtonCircle2.setBackground(new java.awt.Color(51, 0, 204));
-        rSMaterialButtonCircle2.setText("PAY BILLS");
-        rSMaterialButtonCircle2.addActionListener(new java.awt.event.ActionListener() {
+        btn_paybills.setBackground(new java.awt.Color(51, 0, 204));
+        btn_paybills.setText("PAY BILLS");
+        btn_paybills.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                rSMaterialButtonCircle2ActionPerformed(evt);
+                btn_paybillsActionPerformed(evt);
             }
         });
 
-        rSMaterialButtonCircle3.setBackground(new java.awt.Color(51, 0, 204));
-        rSMaterialButtonCircle3.setText("VIEW BILLS");
-        rSMaterialButtonCircle3.addActionListener(new java.awt.event.ActionListener() {
+        btn_viewbills.setBackground(new java.awt.Color(51, 0, 204));
+        btn_viewbills.setText("VIEW BILLS");
+        btn_viewbills.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                rSMaterialButtonCircle3ActionPerformed(evt);
+                btn_viewbillsActionPerformed(evt);
             }
         });
 
-        rSMaterialButtonCircle4.setBackground(new java.awt.Color(255, 51, 51));
-        rSMaterialButtonCircle4.setText("LOGOUT");
-        rSMaterialButtonCircle4.addActionListener(new java.awt.event.ActionListener() {
+        btn_logout.setBackground(new java.awt.Color(255, 51, 51));
+        btn_logout.setText("LOGOUT");
+        btn_logout.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                rSMaterialButtonCircle4ActionPerformed(evt);
+                btn_logoutActionPerformed(evt);
             }
         });
 
@@ -171,10 +231,10 @@ public void unitsConsumed() {
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(rSMaterialButtonCircle1, javax.swing.GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)
-                    .addComponent(rSMaterialButtonCircle2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(rSMaterialButtonCircle3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(rSMaterialButtonCircle4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(btn_info, javax.swing.GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)
+                    .addComponent(btn_paybills, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btn_viewbills, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btn_logout, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel3Layout.setVerticalGroup(
@@ -186,13 +246,13 @@ public void unitsConsumed() {
                         .addGap(15, 15, 15)
                         .addComponent(lbl_name, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(18, 18, 18)
-                .addComponent(rSMaterialButtonCircle1, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btn_info, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(rSMaterialButtonCircle2, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btn_paybills, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(rSMaterialButtonCircle3, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btn_viewbills, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(rSMaterialButtonCircle4, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btn_logout, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
@@ -217,7 +277,6 @@ public void unitsConsumed() {
 
         lbl_unit_consum.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         lbl_unit_consum.setForeground(new java.awt.Color(0, 0, 0));
-        lbl_unit_consum.setText("456");
 
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
@@ -398,15 +457,14 @@ public void unitsConsumed() {
         jLabel17.setForeground(new java.awt.Color(0, 0, 0));
         jLabel17.setText("CURRENT BILL :-");
 
-        jLabel18.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
-        jLabel18.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel18.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel18.setText("123123");
+        lbl_currentbill.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        lbl_currentbill.setForeground(new java.awt.Color(0, 0, 0));
+        lbl_currentbill.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        lbl_currentbill.setText("123123");
 
-        jLabel19.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
-        jLabel19.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel19.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel19.setText("123123");
+        lbl_duedate.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        lbl_duedate.setForeground(new java.awt.Color(0, 0, 0));
+        lbl_duedate.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
 
         jLabel20.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
         jLabel20.setForeground(new java.awt.Color(0, 0, 0));
@@ -418,44 +476,40 @@ public void unitsConsumed() {
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGap(82, 82, 82)
-                                .addComponent(jLabel6))
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGap(41, 41, 41)
-                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                        .addComponent(jLabel20, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(jLabel17, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGap(45, 45, 45)
-                                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(45, 45, 45)
-                                .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 45, Short.MAX_VALUE)
-                                .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(27, 27, 27))
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGap(114, 114, 114)
-                                .addComponent(jLabel10)
-                                .addGap(192, 192, 192)
-                                .addComponent(jLabel13)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jLabel16)
-                                .addGap(109, 109, 109))
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jLabel18)
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                        .addGap(82, 82, 82)
+                        .addComponent(jLabel6))
                     .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(41, 41, 41)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                .addComponent(jLabel20, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jLabel17, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(45, 45, 45)
+                        .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(45, 45, 45)
+                        .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 45, Short.MAX_VALUE)
+                        .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(27, 27, 27))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(114, 114, 114)
+                        .addComponent(jLabel10)
+                        .addGap(192, 192, 192)
+                        .addComponent(jLabel13)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel19)
-                        .addGap(708, 708, 708))))
+                        .addComponent(jLabel16)
+                        .addGap(109, 109, 109))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(lbl_duedate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lbl_currentbill, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap(708, Short.MAX_VALUE))))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -478,11 +532,11 @@ public void unitsConsumed() {
                         .addGap(120, 120, 120)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel17, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel18, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(lbl_currentbill, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(45, 45, 45)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel19, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(lbl_duedate, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(0, 358, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -532,25 +586,25 @@ public void unitsConsumed() {
         this.dispose();
     }//GEN-LAST:event_btn_closeMousePressed
 
-    private void rSMaterialButtonCircle1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rSMaterialButtonCircle1ActionPerformed
+    private void btn_infoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_infoActionPerformed
         // TODO add your handling code here:
         getUserInfo();
-    }//GEN-LAST:event_rSMaterialButtonCircle1ActionPerformed
+    }//GEN-LAST:event_btn_infoActionPerformed
 
-    private void rSMaterialButtonCircle2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rSMaterialButtonCircle2ActionPerformed
+    private void btn_paybillsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_paybillsActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_rSMaterialButtonCircle2ActionPerformed
+    }//GEN-LAST:event_btn_paybillsActionPerformed
 
-    private void rSMaterialButtonCircle3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rSMaterialButtonCircle3ActionPerformed
+    private void btn_viewbillsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewbillsActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_rSMaterialButtonCircle3ActionPerformed
+    }//GEN-LAST:event_btn_viewbillsActionPerformed
 
-    private void rSMaterialButtonCircle4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rSMaterialButtonCircle4ActionPerformed
+    private void btn_logoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_logoutActionPerformed
         // TODO add your handling code here:
         Login log = new Login();
         log.setVisible(true);
         this.dispose();
-    }//GEN-LAST:event_rSMaterialButtonCircle4ActionPerformed
+    }//GEN-LAST:event_btn_logoutActionPerformed
 
 /**
  * @param args the command line arguments
@@ -589,6 +643,10 @@ public static void main(String args[]) {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel btn_close;
+    private rojerusan.RSMaterialButtonCircle btn_info;
+    private rojerusan.RSMaterialButtonCircle btn_logout;
+    private rojerusan.RSMaterialButtonCircle btn_paybills;
+    private rojerusan.RSMaterialButtonCircle btn_viewbills;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -598,8 +656,6 @@ public static void main(String args[]) {
     private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
-    private javax.swing.JLabel jLabel18;
-    private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel20;
     private javax.swing.JLabel jLabel3;
@@ -617,11 +673,9 @@ public static void main(String args[]) {
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
+    private javax.swing.JLabel lbl_currentbill;
+    private javax.swing.JLabel lbl_duedate;
     private javax.swing.JLabel lbl_name;
     private javax.swing.JLabel lbl_unit_consum;
-    private rojerusan.RSMaterialButtonCircle rSMaterialButtonCircle1;
-    private rojerusan.RSMaterialButtonCircle rSMaterialButtonCircle2;
-    private rojerusan.RSMaterialButtonCircle rSMaterialButtonCircle3;
-    private rojerusan.RSMaterialButtonCircle rSMaterialButtonCircle4;
     // End of variables declaration//GEN-END:variables
 }

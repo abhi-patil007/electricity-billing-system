@@ -90,10 +90,12 @@ public void login() {
 
             if ((pwd.equals(pass))) {
                 JOptionPane.showMessageDialog(this, "Login Successful.", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
-
+               
+                
                 Login.setUser_Name(uname);
 
                 Login.setUser_id(uid);
+                System.out.println(Login.getUser_id());
                 Login.setMeter_No(metno);
                 Dashboard dash = new Dashboard();
 //                dash.getDetails(uid);
