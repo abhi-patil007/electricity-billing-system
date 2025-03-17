@@ -51,8 +51,8 @@ public static void setUser_Contact(int phone_no) {
     user_contact = phone_no;
 }
 
-public static void setMeter_No(int meter_no){
-    meterno=meter_no;
+public static void setMeter_No(int meter_no) {
+    meterno = meter_no;
 }
 
 public static String getUser_Name() {
@@ -67,8 +67,8 @@ public static int getUser_id() {
     return user_id;
 }
 
-public static int getMeter_No(){
-    return  meterno;
+public static int getMeter_No() {
+    return meterno;
 }
 
 //TO LOGIN THE USER
@@ -85,17 +85,16 @@ public void login() {
             String uname = rst.getString("name");
             int uid = rst.getInt("id");
             String pwd = rst.getString("password");
-             int metno=rst.getInt("meterno");
+            int metno = rst.getInt("meterno");
             String pass = passwordHash(txt_password.getText());
 
             if ((pwd.equals(pass))) {
                 JOptionPane.showMessageDialog(this, "Login Successful.", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
-               
-                
+
                 Login.setUser_Name(uname);
 
                 Login.setUser_id(uid);
-                System.out.println(Login.getUser_id());
+
                 Login.setMeter_No(metno);
                 Dashboard dash = new Dashboard();
 //                dash.getDetails(uid);

@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Random;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 public class Dashboard extends javax.swing.JFrame {
@@ -20,7 +21,8 @@ public Dashboard() {
 
     unitsConsumed(userid, name);
 }
-private StringBuilder key = new StringBuilder();
+public static JLabel lbl_Duedate;  // Global JLabel  
+int units;
 
 public void getUserInfo() {
     int userid = Login.getUser_id();
@@ -75,11 +77,11 @@ public void getUserInfo() {
 //
 //}
 public void unitsConsumed(int userId, String name) {
-    int units;
+    lbl_Duedate = lbl_duedate; // Store JLabel globally  
     LocalDate currentDate = LocalDate.now(); //get current date Format: YYYY-MM-DD
-    DateTimeFormatter currentDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-    DateTimeFormatter monthYearFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
-    DateTimeFormatter dueDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    DateTimeFormatter currentDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");//this is to get current connection date 
+    DateTimeFormatter monthYearFormatter = DateTimeFormatter.ofPattern("yyyy-MM");//this is for month year so as to set units consumed different for different month
+    DateTimeFormatter dueDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");//this is for due date
     String currentMonthYear = currentDate.format(monthYearFormatter); // Format: YYYY-MM
     try {
         Connection conn = DbConn.getConnection();
@@ -106,7 +108,8 @@ public void unitsConsumed(int userId, String name) {
         lbl_conn.setText(currentDate.format(currentDateFormatter).toString());
         // Set due date to the 16th of the current month
         LocalDate dueDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 19);
-        lbl_duedate.setText(dueDate.format(dueDateFormatter));
+        lbl_Duedate.setText(dueDate.format(dueDateFormatter));
+
     } catch (Exception e) {
         e.printStackTrace();
     }
@@ -622,6 +625,9 @@ public void unitsConsumed(int userId, String name) {
 
     private void btn_paybillsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_paybillsActionPerformed
         // TODO add your handling code here:
+        PayBills pay = new PayBills();
+        pay.setVisible(true);
+        this.dispose();
     }//GEN-LAST:event_btn_paybillsActionPerformed
 
     private void btn_viewbillsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewbillsActionPerformed
