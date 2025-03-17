@@ -10,6 +10,8 @@ import java.sql.PreparedStatement;
 import javax.swing.Icon;
 import javax.swing.JOptionPane;
 import java.sql.ResultSet;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Random;
 
 /**
@@ -43,6 +45,7 @@ int digit;
 private static String user_name;
 private static int user_contact;
 private static int meterno;
+
 public static void setUser_Name(String name) {
     user_name = name;
 }
@@ -50,9 +53,11 @@ public static void setUser_Name(String name) {
 public static void setUser_Contact(int phone_no) {
     user_contact = phone_no;
 }
-public static void setMeter_No(int meter_no){
-    meterno=meter_no;
+
+public static void setMeter_No(int meter_no) {
+    meterno = meter_no;
 }
+
 public static String getUser_Name() {
     return user_name;
 }
@@ -60,10 +65,12 @@ public static String getUser_Name() {
 public static int getUser_Contact() {
     return user_contact;
 }
-public static int getMeter_No(){
-    return  meterno;
+
+public static int getMeter_No() {
+    return meterno;
 }
 //TO GET USER DATA FOR SIGNUP
+
 public void SignUp(String username, String pwd) {
     Random rand = new Random();
     for (int i = 0; i <= 4; i++) {
@@ -78,11 +85,12 @@ public void SignUp(String username, String pwd) {
 
     try {
         Connection con = DbConn.getConnection();
-        PreparedStatement pst = con.prepareStatement("insert into ebs.users(name,contact,password,meterno) values(?,?,?,?)");
+        PreparedStatement pst = con.prepareStatement("insert into ebs.users(name,contact,password,meterno,conn_date) values(?,?,?,?,?)");
         pst.setString(1, username);
         pst.setString(2, contact);
         pst.setString(3, pwd);
         pst.setString(4, mtrno);
+        pst.setString(5, LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 
         int rowcount = pst.executeUpdate();
         if (rowcount > 0) {

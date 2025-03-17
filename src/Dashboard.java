@@ -18,8 +18,11 @@ public Dashboard() {
     String name = Login.getUser_Name();
     lbl_name.setText(name.toUpperCase());
     int userid = Login.getUser_id();
-
-    unitsConsumed(userid, name);
+    int meter = Login.getMeter_No();
+    connectionLabel();
+    unitsConsumed(userid, name, meter);
+    BillPaidLabel();
+    rewLabel();
 }
 public static JLabel lbl_Duedate;  // Global JLabel  
 int units;
@@ -42,41 +45,7 @@ public void getUserInfo() {
     }
 }
 
-/**
- * ***********OriGinal CoDe*************************
- */
-//public void unitsConsumed(int userId) {
-//    int units;
-//    LocalDate currentDate = LocalDate.now(); //get current date Format: YYYY-MM-DD
-//    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-//    try {
-//        Connection conn = DbConn.getConnection();
-//        PreparedStatement pst = conn.prepareStatement("select unit_consume from ebs.users where id=? and month_year=?");
-//        pst.setInt(1, userId);
-//        pst.setString(2, currentDate.toString());
-//        ResultSet rs = pst.executeQuery();
-//        if (rs.next()) { //this if checks if there is the logged in user have the data of unit consumed or not. if yes then it fetches the data and if not then it generates the units consumed
-//            units = rs.getInt("unit_consume");
-//        } else {
-//            Random rand = new Random();//to set a random number on unit consumption label
-//            units = rand.nextInt(201) + 100;
-//            PreparedStatement ps = conn.prepareStatement("update  ebs.users set unit_consume=?,month_year=? where id=?");
-//            ps.setInt(1, units);
-//            ps.setString(2, currentDate.toString());
-//            ps.setInt(3, userId);
-//            ps.executeUpdate();
-//        }
-//        //to check if unit consume label is labelled or not if its not labelled then set the random generated value
-//        if (lbl_unit_consum != null) {
-//            lbl_unit_consum.setText(String.valueOf(units));
-//        }
-//        lbl_duedate.setText(currentDate.plusDays(3).format(formatter).toString());
-//    } catch (Exception e) {
-//        e.printStackTrace();
-//    }
-//
-//}
-public void unitsConsumed(int userId, String name) {
+public void unitsConsumed(int userId, String name, int meter) {
     lbl_Duedate = lbl_duedate; // Store JLabel globally  
     LocalDate currentDate = LocalDate.now(); //get current date Format: YYYY-MM-DD
     DateTimeFormatter currentDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");//this is to get current connection date 
@@ -85,35 +54,103 @@ public void unitsConsumed(int userId, String name) {
     String currentMonthYear = currentDate.format(monthYearFormatter); // Format: YYYY-MM
     try {
         Connection conn = DbConn.getConnection();
-        PreparedStatement pst = conn.prepareStatement("SELECT unit_consume FROM ebs.consumption WHERE user_id = ? AND month_year = ? ");
+        PreparedStatement pst = conn.prepareStatement("SELECT * FROM ebs.consumption WHERE user_id = ? AND month_year = ? ");
         pst.setInt(1, userId);
         pst.setString(2, currentMonthYear);
         ResultSet rs = pst.executeQuery();
         if (rs.next()) { //this if checks if there is the logged in user have the data of unit consumed or not. if yes then it fetches the data and if not then it generates the units consumed
             units = rs.getInt("unit_consume");
+            String amt = rs.getString("bill_amt");
+            lbl_currentbill.setText(amt);
         } else {
             Random rand = new Random();//to set a random number on unit consumption label
             units = rand.nextInt(201) + 100;
-            PreparedStatement ps = conn.prepareStatement("INSERT INTO ebs.consumption (user_id, month_year, unit_consume,name) VALUES (?, ?, ?,?)");
+            PreparedStatement ps = conn.prepareStatement("INSERT INTO ebs.consumption (user_id, month_year, unit_consume,name,met_no) VALUES (?, ?, ?,?,?)");
             ps.setInt(1, userId);
             ps.setString(2, currentMonthYear);
             ps.setInt(3, units);
             ps.setString(4, name);
+            ps.setInt(5, meter);
             ps.executeUpdate();
         }
         //to check if unit consume label is labelled or not if its not labelled then set the random generated value
         if (lbl_unit_consum != null) {
             lbl_unit_consum.setText(String.valueOf(units));
         }
-        lbl_conn.setText(currentDate.format(currentDateFormatter).toString());
+
         // Set due date to the 16th of the current month
         LocalDate dueDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 19);
         lbl_Duedate.setText(dueDate.format(dueDateFormatter));
-        
     } catch (Exception e) {
         e.printStackTrace();
     }
 
+}
+
+//to set connection date on connection label 
+public void connectionLabel() {
+    int id = Login.getUser_id();
+    try {
+        Connection conn = DbConn.getConnection();
+        PreparedStatement pst = conn.prepareStatement("SELECT * FROM ebs.users WHERE id = ?");
+        pst.setInt(1, id);
+
+        ResultSet rs = pst.executeQuery();
+        if (rs.next()) { //this if checks if there is the logged in user have the data of unit consumed or not. if yes then it fetches the data and if not then it generates the units consumed
+            String date = rs.getString("conn_date");
+            // Convert String to LocalDate (assuming DB stores it as YYYY-MM-DD)
+            LocalDate localDate = LocalDate.parse(date);
+            // Format date to "dd-MM-yyyy"
+            String formattedDate = localDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+
+            // Set formatted date to JLabel
+            lbl_conn.setText(formattedDate);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+//to set bill paid count on bill label
+public void BillPaidLabel() {
+    int id = Login.getUser_id();
+    try {
+        Connection conn = DbConn.getConnection();
+        PreparedStatement pst = conn.prepareStatement("SELECT COUNT(*) FROM ebs.consumption WHERE status = 'paid' and  user_id = ?");
+        pst.setInt(1, id);
+        ResultSet rs = pst.executeQuery();
+        if (rs.next()) { //this if checks if there is the logged in user have the data of unit consumed or not. if yes then it fetches the data and if not then it generates the units consumed
+            int count = rs.getInt(1); // Get count from result set
+            lbl_paid.setText(String.valueOf(count));
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+//to set reward and penalty count on their respective labels
+public void rewLabel() {
+    int id = Login.getUser_id();
+    try {
+        Connection conn = DbConn.getConnection();
+        PreparedStatement pst = conn.prepareStatement("SELECT reward,penalty from ebs.consumption where  user_id = ?");
+        pst.setInt(1, id);
+        ResultSet rs = pst.executeQuery();
+        if (rs.next()) {
+            String rew = rs.getString("reward");
+            String pen = rs.getString("penalty");
+            lbl_reward.setText(rew);
+            if (pen == null ) {
+                lbl_penalty.setText("-");
+            } else {
+                lbl_penalty.setText(pen);
+            }
+        } else {
+
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
 }
 
 /**
@@ -144,17 +181,17 @@ public void unitsConsumed(int userId, String name) {
         jPanel6 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         jLabel8 = new javax.swing.JLabel();
-        jLabel9 = new javax.swing.JLabel();
+        lbl_paid = new javax.swing.JLabel();
         jLabel10 = new javax.swing.JLabel();
         jPanel8 = new javax.swing.JPanel();
         jPanel9 = new javax.swing.JPanel();
         jLabel11 = new javax.swing.JLabel();
-        jLabel12 = new javax.swing.JLabel();
+        lbl_reward = new javax.swing.JLabel();
         jLabel13 = new javax.swing.JLabel();
         jPanel10 = new javax.swing.JPanel();
         jPanel11 = new javax.swing.JPanel();
         jLabel14 = new javax.swing.JLabel();
-        jLabel15 = new javax.swing.JLabel();
+        lbl_penalty = new javax.swing.JLabel();
         jLabel16 = new javax.swing.JLabel();
         jLabel17 = new javax.swing.JLabel();
         lbl_currentbill = new javax.swing.JLabel();
@@ -331,9 +368,9 @@ public void unitsConsumed(int userId, String name) {
         jLabel8.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/paid 50X50.png"))); // NOI18N
         jLabel8.setText("jLabel3");
 
-        jLabel9.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
-        jLabel9.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel9.setText("456");
+        lbl_paid.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+        lbl_paid.setForeground(new java.awt.Color(0, 0, 0));
+        lbl_paid.setText("456");
 
         javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
         jPanel6.setLayout(jPanel6Layout);
@@ -344,7 +381,7 @@ public void unitsConsumed(int userId, String name) {
                 .addContainerGap(41, Short.MAX_VALUE)
                 .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(lbl_paid, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(16, 16, 16))
         );
         jPanel6Layout.setVerticalGroup(
@@ -354,7 +391,7 @@ public void unitsConsumed(int userId, String name) {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(lbl_paid, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(18, 18, 18))
         );
 
@@ -380,9 +417,8 @@ public void unitsConsumed(int userId, String name) {
         jLabel11.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/reward 50x50.png"))); // NOI18N
         jLabel11.setText("jLabel3");
 
-        jLabel12.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
-        jLabel12.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel12.setText("456");
+        lbl_reward.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+        lbl_reward.setForeground(new java.awt.Color(0, 0, 0));
 
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
         jPanel8.setLayout(jPanel8Layout);
@@ -393,7 +429,7 @@ public void unitsConsumed(int userId, String name) {
                 .addContainerGap(35, Short.MAX_VALUE)
                 .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 55, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(lbl_reward, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(17, 17, 17))
         );
         jPanel8Layout.setVerticalGroup(
@@ -403,7 +439,7 @@ public void unitsConsumed(int userId, String name) {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(lbl_reward, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(18, 18, 18))
         );
 
@@ -429,9 +465,8 @@ public void unitsConsumed(int userId, String name) {
         jLabel14.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/penalty 50x50.png"))); // NOI18N
         jLabel14.setText("jLabel3");
 
-        jLabel15.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
-        jLabel15.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel15.setText("456");
+        lbl_penalty.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+        lbl_penalty.setForeground(new java.awt.Color(0, 0, 0));
 
         javax.swing.GroupLayout jPanel10Layout = new javax.swing.GroupLayout(jPanel10);
         jPanel10.setLayout(jPanel10Layout);
@@ -442,7 +477,7 @@ public void unitsConsumed(int userId, String name) {
                 .addContainerGap(38, Short.MAX_VALUE)
                 .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 55, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(lbl_penalty, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(14, 14, 14))
         );
         jPanel10Layout.setVerticalGroup(
@@ -452,7 +487,7 @@ public void unitsConsumed(int userId, String name) {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel15, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(lbl_penalty, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(18, 18, 18))
         );
 
@@ -467,7 +502,6 @@ public void unitsConsumed(int userId, String name) {
         lbl_currentbill.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
         lbl_currentbill.setForeground(new java.awt.Color(0, 0, 0));
         lbl_currentbill.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        lbl_currentbill.setText("123123");
 
         lbl_duedate.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
         lbl_duedate.setForeground(new java.awt.Color(0, 0, 0));
@@ -507,19 +541,13 @@ public void unitsConsumed(int userId, String name) {
                                         .addGap(22, 22, 22)))))
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGap(141, 141, 141)
-                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(lbl_duedate, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(lbl_currentbill))
-                                .addGap(0, 0, Short.MAX_VALUE))
-                            .addGroup(jPanel2Layout.createSequentialGroup()
                                 .addGap(45, 45, 45)
                                 .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(45, 45, 45)
                                 .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 45, Short.MAX_VALUE)
                                 .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(7, 7, 7))
+                                .addGap(20, 20, 20))
                             .addGroup(jPanel2Layout.createSequentialGroup()
                                 .addGap(114, 114, 114)
                                 .addComponent(jLabel10)
@@ -527,14 +555,19 @@ public void unitsConsumed(int userId, String name) {
                                 .addComponent(jLabel13)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(jLabel16)
-                                .addGap(84, 84, 84))))
+                                .addGap(97, 97, 97))
+                            .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addGap(141, 141, 141)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(lbl_currentbill, javax.swing.GroupLayout.PREFERRED_SIZE, 147, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(lbl_duedate, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(0, 0, Short.MAX_VALUE))))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGap(41, 41, 41)
                         .addComponent(jLabel18)
                         .addGap(68, 68, 68)
                         .addComponent(lbl_conn, javax.swing.GroupLayout.PREFERRED_SIZE, 147, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addGap(0, 13, Short.MAX_VALUE))
+                        .addGap(13, 13, 13))))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -632,6 +665,9 @@ public void unitsConsumed(int userId, String name) {
 
     private void btn_viewbillsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_viewbillsActionPerformed
         // TODO add your handling code here:
+        ViewBills view = new ViewBills();
+        view.setVisible(true);
+        this.dispose();
     }//GEN-LAST:event_btn_viewbillsActionPerformed
 
     private void btn_logoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_logoutActionPerformed
@@ -685,10 +721,8 @@ public static void main(String args[]) {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
-    private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel18;
@@ -697,7 +731,6 @@ public static void main(String args[]) {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
@@ -713,6 +746,9 @@ public static void main(String args[]) {
     private javax.swing.JLabel lbl_currentbill;
     private javax.swing.JLabel lbl_duedate;
     private javax.swing.JLabel lbl_name;
+    private javax.swing.JLabel lbl_paid;
+    private javax.swing.JLabel lbl_penalty;
+    private javax.swing.JLabel lbl_reward;
     private javax.swing.JLabel lbl_unit_consum;
     // End of variables declaration//GEN-END:variables
 }

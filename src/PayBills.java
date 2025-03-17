@@ -33,7 +33,6 @@ public void setDetails() {
     if ((currentDate.isBefore(dueDate)) || currentDate.isEqual(dueDate)) {
         lbl_rew_or_penal.setText("Reward (-₹50)");
         int reward = bill - 50;
-
         int id = Login.getUser_id();
         try {
             Connection conn = DbConn.getConnection();
@@ -63,8 +62,29 @@ public void setDetails() {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
+}
+
+public boolean statusCheck() {
+    boolean check = false;
+    int id = Login.getUser_id();
+    try {
+        Connection conn = DbConn.getConnection();
+        PreparedStatement pst = conn.prepareStatement("select status from ebs.consumption where user_id=?");
+        pst.setInt(1, id);
+        ResultSet rs = pst.executeQuery();
+        if (rs.next()) {
+            String stats = rs.getString("status");
+            if (stats.equals("paid")) {
+                check = true;
+            } else {
+                check = false;
+            }
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return check;
 }
 
 /**
@@ -187,17 +207,22 @@ public void setDetails() {
     private void btn_payActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_payActionPerformed
         // TODO add your handling code here:
         int id = Login.getUser_id();
-        try {
-            Connection conn = DbConn.getConnection();
-            PreparedStatement pst = conn.prepareStatement("update ebs.consumption set status='paid' where user_id=?");
-            pst.setInt(1, id);
-            int rowcount = pst.executeUpdate();
-            if (rowcount > 0) {
-                JOptionPane.showMessageDialog(this, "Electricity Bill Paid Successfully!!!", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
+        if (statusCheck() == false) {
+            try {
+                Connection conn = DbConn.getConnection();
+                PreparedStatement pst = conn.prepareStatement("update ebs.consumption set status='paid' where user_id=?");
+                pst.setInt(1, id);
+                int rowcount = pst.executeUpdate();
+                if (rowcount > 0) {
+                    JOptionPane.showMessageDialog(this, "Electricity Bill Paid Successfully!!!", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } else {
+            JOptionPane.showMessageDialog(this, "You have already paid the bill!!!", "WARNING", JOptionPane.WARNING_MESSAGE);
         }
+
     }//GEN-LAST:event_btn_payActionPerformed
 
 /**
