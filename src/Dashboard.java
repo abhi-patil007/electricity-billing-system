@@ -109,7 +109,7 @@ public void unitsConsumed(int userId, String name) {
         // Set due date to the 16th of the current month
         LocalDate dueDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 19);
         lbl_Duedate.setText(dueDate.format(dueDateFormatter));
-
+        
     } catch (Exception e) {
         e.printStackTrace();
     }
@@ -625,7 +625,7 @@ public void unitsConsumed(int userId, String name) {
 
     private void btn_paybillsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_paybillsActionPerformed
         // TODO add your handling code here:
-        PayBills pay = new PayBills();
+        BillInfo pay = new BillInfo();
         pay.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_btn_paybillsActionPerformed

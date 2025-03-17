@@ -1,8 +1,10 @@
 
 import java.awt.Toolkit;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.time.LocalDate;
+import javax.swing.JOptionPane;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -20,36 +22,48 @@ public class PayBills extends javax.swing.JFrame {
 public PayBills() {
     initComponents();
     setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("icons/bill.png"))); //FOR ICON 
-    setInfo();
+    setDetails();
 }
 
-//method to set values on label
-public void setInfo() {
-    int userid = Login.getUser_id();
-    try {
-        Connection conn = DbConn.getConnection();
-        PreparedStatement pst = conn.prepareStatement("select unit_consume from ebs.consumption where user_id=?");
-        pst.setInt(1, userid);
-        ResultSet rs = pst.executeQuery();
-        if (rs.next()) {
-            //retrieves unit consumed from database so as to set on label
-            int unit = rs.getInt("unit_consume");
-            lbl_unit_consum.setText(String.valueOf(unit));
+public void setDetails() {
+    int bill = BillInfo.getAmt();
+    lbl_bill.setText("₹ " + String.valueOf(bill));
+    LocalDate currentDate = LocalDate.now();
+    LocalDate dueDate = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), 19);
+    if ((currentDate.isBefore(dueDate)) || currentDate.isEqual(dueDate)) {
+        lbl_rew_or_penal.setText("Reward (-₹50)");
+        int reward = bill - 50;
 
-            //calculate total amt to set on label
-            int total_amt = unit * 5 + 100 + 50 + 30;
-            lbl_total_bill.setText("₹ " + String.valueOf(total_amt));
-
-            //calculate reward to set on label
-            int reward = total_amt - 50;
-            lbl_reward.setText("₹ " + String.valueOf(reward));
-
-            //calculate penalty to set on label
-            int penalty = total_amt + 100;
-            lbl_penalty.setText("₹ " + String.valueOf(penalty));
+        int id = Login.getUser_id();
+        try {
+            Connection conn = DbConn.getConnection();
+            PreparedStatement pst = conn.prepareStatement("update ebs.consumption set bill_amt=?,reward='50' where user_id=?");
+            pst.setInt(1, reward);
+            pst.setInt(2, id);
+            int rowcount = pst.executeUpdate();
+            if (rowcount > 0) {
+                lbl_amt.setText("₹ " + String.valueOf(reward));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
+    } else {
+        lbl_rew_or_penal.setText("Penalty (+₹100)");
+        int penalty = bill + 100;
+        int id = Login.getUser_id();
+        try {
+            Connection conn = DbConn.getConnection();
+            PreparedStatement pst = conn.prepareStatement("update ebs.consumption set bill_amt=?,penalty='100' where user_id=?");
+            pst.setInt(1, penalty);
+            pst.setInt(2, id);
+            int rowcount = pst.executeUpdate();
+            if (rowcount > 0) {
+                lbl_amt.setText("₹ " + String.valueOf(penalty));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }
 
@@ -64,97 +78,42 @@ public void setInfo() {
 
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        lbl_unit_consum = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
-        jLabel7 = new javax.swing.JLabel();
-        jLabel8 = new javax.swing.JLabel();
-        jLabel9 = new javax.swing.JLabel();
-        jLabel10 = new javax.swing.JLabel();
-        jLabel11 = new javax.swing.JLabel();
-        lbl_total_bill = new javax.swing.JLabel();
-        jLabel12 = new javax.swing.JLabel();
-        lbl_reward = new javax.swing.JLabel();
-        lbl_penalty = new javax.swing.JLabel();
-        jLabel13 = new javax.swing.JLabel();
-        btn_proceed = new rojerusan.RSMaterialButtonCircle();
+        lbl_bill = new javax.swing.JLabel();
+        lbl_rew_or_penal = new javax.swing.JLabel();
+        lbl_amt = new javax.swing.JLabel();
+        btn_pay = new rojerusan.RSMaterialButtonCircle();
         btn_back = new rojerusan.RSMaterialButtonCircle();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Bill Info");
+        setTitle("Pay Bill");
 
         jPanel1.setBackground(new java.awt.Color(255, 255, 255));
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel1.setText("Per Unit Rate");
+        jLabel1.setText("Base Bill");
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel2.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel2.setText("₹ 5");
+        lbl_bill.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        lbl_bill.setForeground(new java.awt.Color(0, 0, 0));
+        lbl_bill.setText("asdasd");
 
-        jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel3.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel3.setText("Units Consumed");
+        lbl_rew_or_penal.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        lbl_rew_or_penal.setForeground(new java.awt.Color(0, 0, 0));
+        lbl_rew_or_penal.setText("asdasd");
 
-        lbl_unit_consum.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        lbl_unit_consum.setForeground(new java.awt.Color(0, 0, 0));
+        lbl_amt.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        lbl_amt.setForeground(new java.awt.Color(0, 0, 0));
+        lbl_amt.setText("asdasd");
 
-        jLabel5.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel5.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel5.setText("Government Tax (10%)");
+        btn_pay.setText("Pay");
+        btn_pay.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_payActionPerformed(evt);
+            }
+        });
 
-        jLabel6.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel6.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel6.setText("₹ 100");
-
-        jLabel7.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel7.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel7.setText("Fix Meter Charge");
-
-        jLabel8.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel8.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel8.setText("₹ 50");
-
-        jLabel9.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel9.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel9.setText("Service Charge");
-
-        jLabel10.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel10.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel10.setText("₹ 30");
-
-        jLabel11.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel11.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel11.setText("Total Bill Amount");
-
-        lbl_total_bill.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        lbl_total_bill.setForeground(new java.awt.Color(0, 0, 0));
-
-        jLabel12.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel12.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel12.setText("Early Payment Reward (-₹ 50)");
-
-        lbl_reward.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        lbl_reward.setForeground(new java.awt.Color(0, 0, 0));
-        lbl_reward.setText("₹ ");
-
-        lbl_penalty.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        lbl_penalty.setForeground(new java.awt.Color(0, 0, 0));
-        lbl_penalty.setText("₹ ");
-
-        jLabel13.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel13.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel13.setText("Late Payment Penalty (+₹ 100)");
-
-        btn_proceed.setText("Proceed for Payment");
-        btn_proceed.setFont(new java.awt.Font("Roboto Medium", 1, 17)); // NOI18N
-
-        btn_back.setBackground(new java.awt.Color(255, 51, 51));
-        btn_back.setText("Back");
-        btn_back.setFont(new java.awt.Font("Roboto Medium", 1, 17)); // NOI18N
+        btn_back.setBackground(new java.awt.Color(0, 102, 102));
+        btn_back.setText("back");
         btn_back.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btn_backActionPerformed(evt);
@@ -165,100 +124,42 @@ public void setInfo() {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(120, 120, 120)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(jPanel1Layout.createSequentialGroup()
-                            .addGap(119, 119, 119)
-                            .addComponent(jLabel11))
-                        .addGroup(jPanel1Layout.createSequentialGroup()
-                            .addGap(132, 132, 132)
-                            .addComponent(jLabel9))
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                            .addContainerGap()
-                            .addComponent(jLabel7)))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(94, 94, 94)
-                        .addComponent(jLabel5))
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(132, 132, 132)
-                        .addComponent(jLabel3))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(149, 149, 149)
-                        .addComponent(jLabel1)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel10)
-                            .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(50, 50, 50))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jLabel6)
-                                .addComponent(lbl_total_bill, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(lbl_reward, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(lbl_penalty, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jLabel2)
-                                .addComponent(lbl_unit_consum, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(38, 38, 38))))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(83, 83, 83)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel12)
-                            .addComponent(jLabel13))
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(64, 64, 64)
-                        .addComponent(btn_proceed, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 68, Short.MAX_VALUE)
-                        .addComponent(btn_back, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(50, 50, 50))
+                        .addComponent(lbl_rew_or_penal, javax.swing.GroupLayout.DEFAULT_SIZE, 152, Short.MAX_VALUE)
+                        .addGap(137, 137, 137)))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(lbl_bill, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(lbl_amt, javax.swing.GroupLayout.DEFAULT_SIZE, 80, Short.MAX_VALUE))
+                .addGap(103, 103, 103))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(145, 145, 145)
+                .addComponent(btn_pay, javax.swing.GroupLayout.PREFERRED_SIZE, 127, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(45, 45, 45)
+                .addComponent(btn_back, javax.swing.GroupLayout.PREFERRED_SIZE, 127, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(48, 48, 48)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
+                    .addComponent(lbl_bill, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(48, 48, 48)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(lbl_unit_consum, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
+                    .addComponent(lbl_amt, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lbl_rew_or_penal, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(64, 64, 64)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel5)
-                    .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel7)
-                    .addComponent(jLabel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel9)
-                    .addComponent(jLabel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel11)
-                    .addComponent(lbl_total_bill, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(79, 79, 79)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel12)
-                    .addComponent(lbl_reward, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(28, 28, 28)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel13)
-                    .addComponent(lbl_penalty, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(83, 83, 83)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btn_proceed, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btn_back, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(605, 605, 605))
+                    .addComponent(btn_pay, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_back, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(42, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -272,16 +173,32 @@ public void setInfo() {
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
-        setSize(new java.awt.Dimension(608, 608));
+        pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn_backActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_backActionPerformed
         // TODO add your handling code here:
-        Dashboard dash = new Dashboard();
-        dash.setVisible(true);
+        BillInfo bill = new BillInfo();
+        bill.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_btn_backActionPerformed
+
+    private void btn_payActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_payActionPerformed
+        // TODO add your handling code here:
+        int id = Login.getUser_id();
+        try {
+            Connection conn = DbConn.getConnection();
+            PreparedStatement pst = conn.prepareStatement("update ebs.consumption set status='paid' where user_id=?");
+            pst.setInt(1, id);
+            int rowcount = pst.executeUpdate();
+            if (rowcount > 0) {
+                JOptionPane.showMessageDialog(this, "Electricity Bill Paid Successfully!!!", "SUCCESS", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }//GEN-LAST:event_btn_payActionPerformed
 
 /**
  * @param args the command line arguments
@@ -320,23 +237,11 @@ public static void main(String args[]) {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private rojerusan.RSMaterialButtonCircle btn_back;
-    private rojerusan.RSMaterialButtonCircle btn_proceed;
+    private rojerusan.RSMaterialButtonCircle btn_pay;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel12;
-    private javax.swing.JLabel jLabel13;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JLabel lbl_penalty;
-    private javax.swing.JLabel lbl_reward;
-    private javax.swing.JLabel lbl_total_bill;
-    private javax.swing.JLabel lbl_unit_consum;
+    private javax.swing.JLabel lbl_amt;
+    private javax.swing.JLabel lbl_bill;
+    private javax.swing.JLabel lbl_rew_or_penal;
     // End of variables declaration//GEN-END:variables
 }
